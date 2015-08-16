@@ -42,8 +42,6 @@ bool initSharedMem();
 void clearSharedMem();
 void initLights();
 void setCamera(float posX, float posY, float posZ, float targetX, float targetY, float targetZ);
-void drawString(const char *str, int x, int y, float color[4], void *font);
-void drawString3D(const char *str, float pos[3], float color[4], void *font);
 void showInfo();
 void showFPS();
 void toOrtho();
@@ -432,61 +430,6 @@ void initGL()
     initLights();
 }
 
-
-
-///////////////////////////////////////////////////////////////////////////////
-// write 2d text using GLUT
-// The projection matrix must be set to orthogonal before call this function.
-///////////////////////////////////////////////////////////////////////////////
-void drawString(const char *str, int x, int y, float color[4], void *font)
-{
-    glPushAttrib(GL_LIGHTING_BIT | GL_CURRENT_BIT); // lighting and color mask
-    glDisable(GL_LIGHTING);     // need to disable lighting for proper text color
-    glDisable(GL_TEXTURE_2D);
-    
-    glColor4fv(color);          // set text color
-    glRasterPos2i(x, y);        // place text position
-    
-    // loop all characters in the string
-    while(*str)
-    {
-        glutBitmapCharacter(font, *str);
-        ++str;
-    }
-    
-    glEnable(GL_TEXTURE_2D);
-    glEnable(GL_LIGHTING);
-    glPopAttrib();
-}
-
-
-
-///////////////////////////////////////////////////////////////////////////////
-// draw a string in 3D space
-///////////////////////////////////////////////////////////////////////////////
-void drawString3D(const char *str, float pos[3], float color[4], void *font)
-{
-    glPushAttrib(GL_LIGHTING_BIT | GL_CURRENT_BIT); // lighting and color mask
-    glDisable(GL_LIGHTING);     // need to disable lighting for proper text color
-    glDisable(GL_TEXTURE_2D);
-    
-    glColor4fv(color);          // set text color
-    glRasterPos3fv(pos);        // place text position
-    
-    // loop all characters in the string
-    while(*str)
-    {
-        glutBitmapCharacter(font, *str);
-        ++str;
-    }
-    
-    glDisable(GL_TEXTURE_2D);
-    glEnable(GL_LIGHTING);
-    glPopAttrib();
-}
-
-
-
 ///////////////////////////////////////////////////////////////////////////////
 // initialize global variables
 ///////////////////////////////////////////////////////////////////////////////
@@ -588,17 +531,6 @@ void showInfo()
         ss << "on" << ends;
     else
         ss << "off" << ends;
-    
-    drawString(ss.str().c_str(), 1, screenHeight-TEXT_HEIGHT, color, font);
-    ss.str(""); // clear buffer
-    
-    ss << std::fixed << std::setprecision(3);
-    ss << "Render-To-Texture Time: " << renderToTextureTime << " ms" << ends;
-    drawString(ss.str().c_str(), 1, screenHeight-(2*TEXT_HEIGHT), color, font);
-    ss.str("");
-    
-    ss << "Press SPACE to toggle FBO." << ends;
-    drawString(ss.str().c_str(), 1, 1, color, font);
     
     // unset floating format
     ss << std::resetiosflags(std::ios_base::fixed | std::ios_base::floatfield);
