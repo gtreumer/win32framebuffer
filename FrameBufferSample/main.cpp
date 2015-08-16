@@ -632,15 +632,6 @@ bool checkFramebufferStatus()
         case GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT:
             std::cout << "[ERROR] Framebuffer incomplete: No image is attached to FBO." << std::endl;
             return false;
-            /*
-             case GL_FRAMEBUFFER_INCOMPLETE_DIMENSIONS:
-             std::cout << "[ERROR] Framebuffer incomplete: Attached images have different dimensions." << std::endl;
-             return false;
-             
-             case GL_FRAMEBUFFER_INCOMPLETE_FORMATS:
-             std::cout << "[ERROR] Framebuffer incomplete: Color attached images have different internal formats." << std::endl;
-             return false;
-             */
         case GL_FRAMEBUFFER_INCOMPLETE_DRAW_BUFFER:
             std::cout << "[ERROR] Framebuffer incomplete: Draw buffer." << std::endl;
             return false;
