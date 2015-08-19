@@ -9,13 +9,23 @@
 #ifndef __FrameBufferSample__Scene__
 #define __FrameBufferSample__Scene__
 
-class Scene
+#include "Cache.h"
+
+class Drawable;
+
+class Scene : public Cache
 {
 public:
-    Scene();
+    Scene(int width, int height);
     ~Scene();
 
     void draw();
+protected:
+    void validate();
+private:
+    Drawable* mDrawable;
+    int mWidth;
+    int mHeight;
 };
 
 #endif /* defined(__FrameBufferSample__Scene__) */

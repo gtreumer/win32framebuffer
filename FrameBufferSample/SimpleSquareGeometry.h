@@ -17,7 +17,7 @@ typedef std::vector<float> DataList;
 class SimpleSquareGeometry : public Geometry, public Cache
 {
 public:
-    SimpleSquareGeometry();
+    SimpleSquareGeometry(float width, float height);
     ~SimpleSquareGeometry();
     
     virtual std::size_t getVertexOffet() const;
@@ -31,6 +31,9 @@ protected:
 private:
     unsigned int mBufferId;
     mutable DataList mData;
+    float mWidth;
+    float mHeight;
+    
     
 };
 

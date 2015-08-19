@@ -7,7 +7,9 @@
 //
 
 #include "Scene.h"
+#include "Drawable.h"
 #include <string>
+#include <OpenGL/gl.h>
 
 
 const std::string vertShader =
@@ -31,17 +33,37 @@ const std::string fragShader =
 "gl_FragColor = color; \n"
 "} \n";
 
-Scene::Scene()
+Scene::Scene(int width, int height) :
+mWidth(width),
+mHeight(height)
 {
     
 }
 
 Scene::~Scene()
 {
-    
+    if (mDrawable)
+    {
+        delete mDrawable;
+        mDrawable = 0;
+    }
 }
 
 void Scene::draw()
 {
+    if (invalid())
+        validate();
     
+    glClear(GL_COLOR_BUFFER_BIT);
+    glClearColor(1.0, 1.0, 1.0, 1.0);
+    glViewport(0, 0, mWidth, mHeight);
+    
+    
+    mDrawable->draw();
+}
+
+void Scene::validate()
+{
+    mDrawable = new Drawable(Math::Vec2f(300.0f, 300.0f));
+    mInvalid = false;
 }

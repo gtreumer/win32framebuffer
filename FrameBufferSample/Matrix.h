@@ -80,14 +80,14 @@ namespace Math
             w.x = 0; w.y = 0; w.z = 0; w.w = 1;
         }
         
-        Matrix4(const typename Matrix3<T>& m)
-        {
-            x.x = m.x.x; x.y = m.x.y; x.z = m.x.z; x.w = 0;
-            y.x = m.y.x; y.y = m.y.y; y.z = m.y.z; y.w = 0;
-            z.x = m.z.x; z.y = m.z.y; z.z = m.z.z; z.w = 0;
-            w.x = 0; w.y = 0; w.z = 0; w.w = 1;
-        }
-        
+//        Matrix4(const typename Matr<T>& m)
+//        {
+//            x.x = m.x.x; x.y = m.x.y; x.z = m.x.z; x.w = 0;
+//            y.x = m.y.x; y.y = m.y.y; y.z = m.y.z; y.w = 0;
+//            z.x = m.z.x; z.y = m.z.y; z.z = m.z.z; z.w = 0;
+//            w.x = 0; w.y = 0; w.z = 0; w.w = 1;
+//        }
+//        
         Matrix4(const T* m)
         {
             x.x = m[0];  x.y = m[1];  x.z = m[2];  x.w = m[3];

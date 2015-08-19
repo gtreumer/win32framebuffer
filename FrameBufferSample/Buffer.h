@@ -21,6 +21,10 @@ public:
     
     void bind();
     void unbind();
+    unsigned int getStride() const;
+    unsigned int getVertexOffset() const;
+    unsigned int getTextureOffset() const;
+    unsigned int getSize() const;
 protected:
     virtual void validate();
 private:

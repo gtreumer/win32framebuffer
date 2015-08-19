@@ -10,7 +10,8 @@
 #include <OpenGL/gl.h>
 
 
-SimpleSquareGeometry::SimpleSquareGeometry()
+SimpleSquareGeometry::SimpleSquareGeometry(float w, float h) :
+mWidth(w), mHeight(h)
 {
     if (invalid())
         validate();
@@ -38,7 +39,7 @@ std::size_t SimpleSquareGeometry::getNormalOffet() const
 
 std::size_t SimpleSquareGeometry::getStride() const
 {
-    return 5;
+    return 5 * sizeof(float);
 }
 
 void* SimpleSquareGeometry::getData() const
@@ -53,12 +54,15 @@ std::size_t SimpleSquareGeometry::getSize() const
 
 void SimpleSquareGeometry::validate()
 {
-    mData.resize((2 + 3)* 3);
+    mData.resize((2 + 3) * 4);
     
-    mData[1]  = -1.0f; mData[2]  = +1.0f; mData[3]  = 0.0f; mData[4]  = 0.0f; mData[5]  = 0.0f;
-    mData[6]  = -1.0f; mData[7]  = -1.0f; mData[8]  = 0.0f; mData[9]  = 0.0f; mData[10] = 1.0f;
-    mData[11] = +1.0f; mData[12] = +1.0f; mData[13] = 0.0f; mData[14] = 1.0f; mData[15] = 1.0f;
-    mData[16] = +1.0f; mData[17] = -1.0f; mData[18] = 0.0f; mData[19] = 1.0f; mData[20] = 0.0f;
+    float w = 0.5f * mWidth;
+    float h = 0.5f * mHeight;
+    
+    mData[0]  = -1.0f * w; mData[1]  = +1.0f * h; mData[2]  = 0.0f; mData[3]  = 0.0f; mData[4]  = 0.0f;
+    mData[5]  = -1.0f * w; mData[6]  = -1.0f * h; mData[7]  = 0.0f; mData[8]  = 0.0f; mData[9]  = 1.0f;
+    mData[10] = +1.0f * w; mData[11] = +1.0f * h; mData[12] = 0.0f; mData[13] = 1.0f; mData[14] = 1.0f;
+    mData[15] = +1.0f * w; mData[16] = -1.0f * h; mData[17] = 0.0f; mData[18] = 1.0f; mData[19] = 0.0f;
     
     mInvalid = false;
 }

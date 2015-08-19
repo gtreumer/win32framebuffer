@@ -57,8 +57,8 @@ std::string getRenderbufferParameters(GLuint id);
 
 
 // constants
-const int   SCREEN_WIDTH    = 400;
-const int   SCREEN_HEIGHT   = 300;
+const int   SCREEN_WIDTH    = 640;
+const int   SCREEN_HEIGHT   = 480;
 const float CAMERA_DISTANCE = 6.0f;
 const int   TEXT_WIDTH      = 8;
 const int   TEXT_HEIGHT     = 13;
@@ -70,8 +70,8 @@ void *font = GLUT_BITMAP_8_BY_13;
 GLuint fboId;                       // ID of FBO
 GLuint textureId;                   // ID of texture
 GLuint rboId;                       // ID of Renderbuffer object for depth & stencil
-int screenWidth;
-int screenHeight;
+int screenWidth = SCREEN_WIDTH;
+int screenHeight = SCREEN_HEIGHT;
 bool mouseLeftDown;
 bool mouseRightDown;
 float mouseX, mouseY;
@@ -216,144 +216,147 @@ void draw()
     glBindTexture(GL_TEXTURE_2D, 0);
 }
 
+#include "Scene.h"
 
+Scene* mScene = new Scene(screenWidth, screenHeight);
 
 ///////////////////////////////////////////////////////////////////////////////
 int main(int argc, char **argv)
 {
     // init global vars
-    initSharedMem();
+    //initSharedMem();
     
     // register exit callback
     atexit(exitCB);
     
     // init GLUT and GL
     initGLUT(argc, argv);
-    initGL();
     
-    // create a texture object
-    glGenTextures(1, &textureId);
-    glBindTexture(GL_TEXTURE_2D, textureId);
-    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    //glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-    //glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
-    //glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
-    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D, GL_GENERATE_MIPMAP, GL_TRUE); // automatic mipmap generation included in OpenGL v1.4
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, TEXTURE_WIDTH, TEXTURE_HEIGHT, 0, GL_RGBA, GL_UNSIGNED_BYTE, 0);
-    glBindTexture(GL_TEXTURE_2D, 0);
-    
-    // get OpenGL info
-    glInfo glInfo;
-    glInfo.getInfo();
-    glInfo.printSelf();
-    
-#ifdef _WIN32
-    // check if FBO is supported by your video card
-    if(glInfo.isExtensionSupported("GL_ARB_framebuffer_object"))
-    {
-        // get pointers to GL functions
-        glGenFramebuffers                     = (PFNGLGENFRAMEBUFFERSPROC)wglGetProcAddress("glGenFramebuffers");
-        glDeleteFramebuffers                  = (PFNGLDELETEFRAMEBUFFERSPROC)wglGetProcAddress("glDeleteFramebuffers");
-        glBindFramebuffer                     = (PFNGLBINDFRAMEBUFFERPROC)wglGetProcAddress("glBindFramebuffer");
-        glCheckFramebufferStatus              = (PFNGLCHECKFRAMEBUFFERSTATUSPROC)wglGetProcAddress("glCheckFramebufferStatus");
-        glGetFramebufferAttachmentParameteriv = (PFNGLGETFRAMEBUFFERATTACHMENTPARAMETERIVPROC)wglGetProcAddress("glGetFramebufferAttachmentParameteriv");
-        glGenerateMipmap                      = (PFNGLGENERATEMIPMAPPROC)wglGetProcAddress("glGenerateMipmap");
-        glFramebufferTexture2D                = (PFNGLFRAMEBUFFERTEXTURE2DPROC)wglGetProcAddress("glFramebufferTexture2D");
-        glFramebufferRenderbuffer             = (PFNGLFRAMEBUFFERRENDERBUFFERPROC)wglGetProcAddress("glFramebufferRenderbuffer");
-        glGenRenderbuffers                    = (PFNGLGENRENDERBUFFERSPROC)wglGetProcAddress("glGenRenderbuffers");
-        glDeleteRenderbuffers                 = (PFNGLDELETERENDERBUFFERSPROC)wglGetProcAddress("glDeleteRenderbuffers");
-        glBindRenderbuffer                    = (PFNGLBINDRENDERBUFFERPROC)wglGetProcAddress("glBindRenderbuffer");
-        glRenderbufferStorage                 = (PFNGLRENDERBUFFERSTORAGEPROC)wglGetProcAddress("glRenderbufferStorage");
-        glGetRenderbufferParameteriv          = (PFNGLGETRENDERBUFFERPARAMETERIVPROC)wglGetProcAddress("glGetRenderbufferParameteriv");
-        glIsRenderbuffer                      = (PFNGLISRENDERBUFFERPROC)wglGetProcAddress("glIsRenderbuffer");
-        
-        // check once again FBO extension
-        if(glGenFramebuffers && glDeleteFramebuffers && glBindFramebuffer && glCheckFramebufferStatus &&
-           glGetFramebufferAttachmentParameteriv && glGenerateMipmap && glFramebufferTexture2D && glFramebufferRenderbuffer &&
-           glGenRenderbuffers && glDeleteRenderbuffers && glBindRenderbuffer && glRenderbufferStorage &&
-           glGetRenderbufferParameteriv && glIsRenderbuffer)
-        {
-            fboSupported = fboUsed = true;
-            std::cout << "Video card supports GL_ARB_framebuffer_object." << std::endl;
-        }
-        else
-        {
-            fboSupported = fboUsed = false;
-            std::cout << "Video card does NOT support GL_ARB_framebuffer_object." << std::endl;
-        }
-    }
-    
-    // check EXT_swap_control is supported
-    if(glInfo.isExtensionSupported("WGL_EXT_swap_control"))
-    {
-        // get pointers to WGL functions
-        wglSwapIntervalEXT = (PFNWGLSWAPINTERVALEXTPROC)wglGetProcAddress("wglSwapIntervalEXT");
-        wglGetSwapIntervalEXT = (PFNWGLGETSWAPINTERVALEXTPROC)wglGetProcAddress("wglGetSwapIntervalEXT");
-        if(wglSwapIntervalEXT && wglGetSwapIntervalEXT)
-        {
-            // disable v-sync
-            wglSwapIntervalEXT(0);
-            std::cout << "Video card supports WGL_EXT_swap_control." << std::endl;
-        }
-    }
-    
-#else // for linux, do not need to get function pointers, it is up-to-date
-    if(glInfo.isExtensionSupported("GL_ARB_framebuffer_object"))
-    {
-        fboSupported = fboUsed = true;
-        std::cout << "Video card supports GL_ARB_framebuffer_object." << std::endl;
-    }
-    else
-    {
-        fboSupported = fboUsed = false;
-        std::cout << "Video card does NOT support GL_ARB_framebuffer_object." << std::endl;
-    }
-#endif
-    
-    if(fboSupported)
-    {
-        // create a framebuffer object, you need to delete them when program exits.
-        glGenFramebuffers(1, &fboId);
-        glBindFramebuffer(GL_FRAMEBUFFER, fboId);
-        
-        // create a renderbuffer object to store depth & stencil info with GL_DEPTH_STENCIL
-        // Check "GL_EXT_packed_depth_stencil" extension spec for more details.
-        // NOTE: A depth renderable image should be attached the FBO for depth test.
-        // If we don't attach a depth renderable image to the FBO, then
-        // the rendering output will be corrupted because of missing depth test.
-        // If you also need stencil test for your rendering, then you must
-        // attach additional image to the stencil attachement point, too.
-        glGenRenderbuffers(1, &rboId);
-        glBindRenderbuffer(GL_RENDERBUFFER, rboId);
-        glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_STENCIL, TEXTURE_WIDTH, TEXTURE_HEIGHT);
-        glBindRenderbuffer(GL_RENDERBUFFER, 0);
-        
-        // attach a texture to FBO color attachement point
-        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, textureId, 0);
-        
-        // attach a renderbuffer to depth attachment point
-        glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, rboId);
-        
-        // attach a renderbuffer to stencil attachment point
-        glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_STENCIL_ATTACHMENT, GL_RENDERBUFFER, rboId);
-        
-        //@@ disable color buffer if you don't attach any color buffer image,
-        //@@ for example, rendering depth buffer only to a texture.
-        //@@ Otherwise, glCheckFramebufferStatusEXT will not be complete.
-        //glDrawBuffer(GL_NONE);
-        //glReadBuffer(GL_NONE);
-        
-        // check FBO status
-        printFramebufferInfo();
-        bool status = checkFramebufferStatus();
-        if(!status)
-            fboUsed = false;
-        
-        glBindFramebuffer(GL_FRAMEBUFFER, 0);
-    }
+//    initGL();
+//    
+//    // create a texture object
+//    glGenTextures(1, &textureId);
+//    glBindTexture(GL_TEXTURE_2D, textureId);
+//    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+//    //glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+//    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+//    //glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
+//    //glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
+//    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+//    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+//    glTexParameteri(GL_TEXTURE_2D, GL_GENERATE_MIPMAP, GL_TRUE); // automatic mipmap generation included in OpenGL v1.4
+//    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, TEXTURE_WIDTH, TEXTURE_HEIGHT, 0, GL_RGBA, GL_UNSIGNED_BYTE, 0);
+//    glBindTexture(GL_TEXTURE_2D, 0);
+//    
+//    // get OpenGL info
+//    glInfo glInfo;
+//    glInfo.getInfo();
+//    glInfo.printSelf();
+//    
+//#ifdef _WIN32
+//    // check if FBO is supported by your video card
+//    if(glInfo.isExtensionSupported("GL_ARB_framebuffer_object"))
+//    {
+//        // get pointers to GL functions
+//        glGenFramebuffers                     = (PFNGLGENFRAMEBUFFERSPROC)wglGetProcAddress("glGenFramebuffers");
+//        glDeleteFramebuffers                  = (PFNGLDELETEFRAMEBUFFERSPROC)wglGetProcAddress("glDeleteFramebuffers");
+//        glBindFramebuffer                     = (PFNGLBINDFRAMEBUFFERPROC)wglGetProcAddress("glBindFramebuffer");
+//        glCheckFramebufferStatus              = (PFNGLCHECKFRAMEBUFFERSTATUSPROC)wglGetProcAddress("glCheckFramebufferStatus");
+//        glGetFramebufferAttachmentParameteriv = (PFNGLGETFRAMEBUFFERATTACHMENTPARAMETERIVPROC)wglGetProcAddress("glGetFramebufferAttachmentParameteriv");
+//        glGenerateMipmap                      = (PFNGLGENERATEMIPMAPPROC)wglGetProcAddress("glGenerateMipmap");
+//        glFramebufferTexture2D                = (PFNGLFRAMEBUFFERTEXTURE2DPROC)wglGetProcAddress("glFramebufferTexture2D");
+//        glFramebufferRenderbuffer             = (PFNGLFRAMEBUFFERRENDERBUFFERPROC)wglGetProcAddress("glFramebufferRenderbuffer");
+//        glGenRenderbuffers                    = (PFNGLGENRENDERBUFFERSPROC)wglGetProcAddress("glGenRenderbuffers");
+//        glDeleteRenderbuffers                 = (PFNGLDELETERENDERBUFFERSPROC)wglGetProcAddress("glDeleteRenderbuffers");
+//        glBindRenderbuffer                    = (PFNGLBINDRENDERBUFFERPROC)wglGetProcAddress("glBindRenderbuffer");
+//        glRenderbufferStorage                 = (PFNGLRENDERBUFFERSTORAGEPROC)wglGetProcAddress("glRenderbufferStorage");
+//        glGetRenderbufferParameteriv          = (PFNGLGETRENDERBUFFERPARAMETERIVPROC)wglGetProcAddress("glGetRenderbufferParameteriv");
+//        glIsRenderbuffer                      = (PFNGLISRENDERBUFFERPROC)wglGetProcAddress("glIsRenderbuffer");
+//        
+//        // check once again FBO extension
+//        if(glGenFramebuffers && glDeleteFramebuffers && glBindFramebuffer && glCheckFramebufferStatus &&
+//           glGetFramebufferAttachmentParameteriv && glGenerateMipmap && glFramebufferTexture2D && glFramebufferRenderbuffer &&
+//           glGenRenderbuffers && glDeleteRenderbuffers && glBindRenderbuffer && glRenderbufferStorage &&
+//           glGetRenderbufferParameteriv && glIsRenderbuffer)
+//        {
+//            fboSupported = fboUsed = true;
+//            std::cout << "Video card supports GL_ARB_framebuffer_object." << std::endl;
+//        }
+//        else
+//        {
+//            fboSupported = fboUsed = false;
+//            std::cout << "Video card does NOT support GL_ARB_framebuffer_object." << std::endl;
+//        }
+//    }
+//    
+//    // check EXT_swap_control is supported
+//    if(glInfo.isExtensionSupported("WGL_EXT_swap_control"))
+//    {
+//        // get pointers to WGL functions
+//        wglSwapIntervalEXT = (PFNWGLSWAPINTERVALEXTPROC)wglGetProcAddress("wglSwapIntervalEXT");
+//        wglGetSwapIntervalEXT = (PFNWGLGETSWAPINTERVALEXTPROC)wglGetProcAddress("wglGetSwapIntervalEXT");
+//        if(wglSwapIntervalEXT && wglGetSwapIntervalEXT)
+//        {
+//            // disable v-sync
+//            wglSwapIntervalEXT(0);
+//            std::cout << "Video card supports WGL_EXT_swap_control." << std::endl;
+//        }
+//    }
+//    
+//#else // for linux, do not need to get function pointers, it is up-to-date
+//    if(glInfo.isExtensionSupported("GL_ARB_framebuffer_object"))
+//    {
+//        fboSupported = fboUsed = true;
+//        std::cout << "Video card supports GL_ARB_framebuffer_object." << std::endl;
+//    }
+//    else
+//    {
+//        fboSupported = fboUsed = false;
+//        std::cout << "Video card does NOT support GL_ARB_framebuffer_object." << std::endl;
+//    }
+//#endif
+//    
+//    if(fboSupported)
+//    {
+//        // create a framebuffer object, you need to delete them when program exits.
+//        glGenFramebuffers(1, &fboId);
+//        glBindFramebuffer(GL_FRAMEBUFFER, fboId);
+//        
+//        // create a renderbuffer object to store depth & stencil info with GL_DEPTH_STENCIL
+//        // Check "GL_EXT_packed_depth_stencil" extension spec for more details.
+//        // NOTE: A depth renderable image should be attached the FBO for depth test.
+//        // If we don't attach a depth renderable image to the FBO, then
+//        // the rendering output will be corrupted because of missing depth test.
+//        // If you also need stencil test for your rendering, then you must
+//        // attach additional image to the stencil attachement point, too.
+//        glGenRenderbuffers(1, &rboId);
+//        glBindRenderbuffer(GL_RENDERBUFFER, rboId);
+//        glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_STENCIL, TEXTURE_WIDTH, TEXTURE_HEIGHT);
+//        glBindRenderbuffer(GL_RENDERBUFFER, 0);
+//        
+//        // attach a texture to FBO color attachement point
+//        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, textureId, 0);
+//        
+//        // attach a renderbuffer to depth attachment point
+//        glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, rboId);
+//        
+//        // attach a renderbuffer to stencil attachment point
+//        glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_STENCIL_ATTACHMENT, GL_RENDERBUFFER, rboId);
+//        
+//        //@@ disable color buffer if you don't attach any color buffer image,
+//        //@@ for example, rendering depth buffer only to a texture.
+//        //@@ Otherwise, glCheckFramebufferStatusEXT will not be complete.
+//        //glDrawBuffer(GL_NONE);
+//        //glReadBuffer(GL_NONE);
+//        
+//        // check FBO status
+//        printFramebufferInfo();
+//        bool status = checkFramebufferStatus();
+//        if(!status)
+//            fboUsed = false;
+//        
+//        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+//    }
     
     
     // the last GLUT call (LOOP)
@@ -948,155 +951,156 @@ void toPerspective()
 
 void displayCB()
 {
-    // compute rotation angle
-    const float ANGLE_SPEED = 90;   // degree/s
-    float angle = ANGLE_SPEED * playTime;
-    
-    // adjust viewport and projection matrix to texture dimension
-    glViewport(0, 0, TEXTURE_WIDTH, TEXTURE_HEIGHT);
-    glMatrixMode(GL_PROJECTION);
-    glLoadIdentity();
-    gluPerspective(60.0f, (float)(TEXTURE_WIDTH)/TEXTURE_HEIGHT, 1.0f, 100.0f);
-    glMatrixMode(GL_MODELVIEW);
-    
-    // camera transform
-    glLoadIdentity();
-    glTranslatef(0, 0, -CAMERA_DISTANCE);
-    
-    // with FBO
-    // render directly to a texture
-    if(fboUsed)
-    {
-        // set the rendering destination to FBO
-        glBindFramebuffer(GL_FRAMEBUFFER, fboId);
-        
-        // clear buffer
-        glClearColor(1, 1, 1, 1);
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
-        
-        // enable stencil test
-        glEnable(GL_STENCIL_TEST);
-        
-        // draw a rotating teapot
-        glPushMatrix();
-        glRotatef(angle*0.5f, 1, 0, 0);
-        glRotatef(angle, 0, 1, 0);
-        glRotatef(angle*0.7f, 0, 0, 1);
-        glTranslatef(0, -1.575f, 0);
-        
-        // PASS1: draw teapot on both color and stencil buffer
-        // The reference value will be written to the stencil buffer if the test is passed.
-        glStencilFunc(GL_ALWAYS, 0x1, 0x1);
-        glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
-        glColor3f(0.929524f, 0.796542f, 0.178823f);
-        drawTeapot();
-        
-        // PASS 2: draw the wireframe teapot only where the stencil value is NOT set to 1.
-        glStencilFunc(GL_NOTEQUAL, 0x1, 0x1);
-        glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
-        glDisable(GL_LIGHTING);
-        glColor3f(0,1,0); // outline color
-        glLineWidth(5.0f);
-        glPolygonMode(GL_FRONT_AND_BACK, GL_LINE); // wireframe
-        drawTeapot();
-        glPolygonMode(GL_FRONT_AND_BACK, GL_FILL); // return to fill mode
-        glEnable(GL_LIGHTING);
-        
-        glPopMatrix();
-        glDisable(GL_STENCIL_TEST);
-        
-        // back to normal window-system-provided framebuffer
-        glBindFramebuffer(GL_FRAMEBUFFER, 0); // unbind
-        
-        // trigger mipmaps generation explicitly
-        // NOTE: If GL_GENERATE_MIPMAP is set to GL_TRUE, then glCopyTexSubImage2D()
-        // triggers mipmap generation automatically. However, the texture attached
-        // onto a FBO should generate mipmaps manually via glGenerateMipmapEXT().
-        glBindTexture(GL_TEXTURE_2D, textureId);
-        glGenerateMipmap(GL_TEXTURE_2D);
-        glBindTexture(GL_TEXTURE_2D, 0);
-    }
-    
-    // without FBO
-    // render to the backbuffer and copy the backbuffer to a texture
-    else
-    {
-        // clear buffer
-        glClearColor(1, 1, 1, 1);
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT| GL_STENCIL_BUFFER_BIT);
-        
-        glPushAttrib(GL_COLOR_BUFFER_BIT | GL_PIXEL_MODE_BIT); // for GL_DRAW_BUFFER and GL_READ_BUFFER
-        glDrawBuffer(GL_BACK);
-        glReadBuffer(GL_BACK);
-        
-        // enable stencil test
-        glEnable(GL_STENCIL_TEST);
-        
-        // draw a rotating teapot
-        glPushMatrix();
-        glRotatef(angle*0.5f, 1, 0, 0);
-        glRotatef(angle, 0, 1, 0);
-        glRotatef(angle*0.7f, 0, 0, 1);
-        glTranslatef(0, -1.575f, 0);
-        
-        // PASS1: draw teapot on both color and stencil buffer
-        // The reference value will be written to the stencil buffer if the test is passed.
-        glStencilFunc(GL_ALWAYS, 0x1, 0x1);
-        glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
-        glColor3f(0.929524f, 0.796542f, 0.178823f);
-        drawTeapot();
-        
-        // PASS 2: draw the wireframe teapot only where the stencil value is NOT set to 1.
-        glStencilFunc(GL_NOTEQUAL, 0x1, 0x1);
-        glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
-        glDisable(GL_LIGHTING);
-        glColor3f(0,1,0); // outline color
-        glLineWidth(5.0f);
-        glPolygonMode(GL_FRONT_AND_BACK, GL_LINE); // wireframe
-        drawTeapot();
-        glPolygonMode(GL_FRONT_AND_BACK, GL_FILL); // return to fill mode
-        glEnable(GL_LIGHTING);
-        
-        glPopMatrix();
-        glDisable(GL_STENCIL_TEST);
-        
-        // copy the framebuffer pixels to a texture
-        glBindTexture(GL_TEXTURE_2D, textureId);
-        glCopyTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, 0, 0, TEXTURE_WIDTH, TEXTURE_HEIGHT);
-        glBindTexture(GL_TEXTURE_2D, 0);
-        
-        glPopAttrib(); // GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT
-    }
-    
-    
-    // rendering as normal ////////////////////////////////////////////////////
-    
-    // back to normal viewport and projection matrix
-    glViewport(0, 0, screenWidth, screenHeight);
-    glMatrixMode(GL_PROJECTION);
-    glLoadIdentity();
-    gluPerspective(60.0f, (float)(screenWidth)/screenHeight, 1.0f, 100.0f);
-    glMatrixMode(GL_MODELVIEW);
-    glLoadIdentity();
-    
-    // tramsform camera
-    glTranslatef(0, 0, -cameraDistance);
-    glRotatef(cameraAngleX, 1, 0, 0);   // pitch
-    glRotatef(cameraAngleY, 0, 1, 0);   // heading
-    
-    // clear framebuffer
-    glClearColor(0, 0, 0, 0);
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
-    
-    glPushMatrix();
-    
-    // draw a cube with the dynamic texture
-    draw();
-    
-    glPopMatrix();
-    
-    // draw info messages
-    showInfo();
+    mScene->draw();
+//    // compute rotation angle
+//    const float ANGLE_SPEED = 90;   // degree/s
+//    float angle = ANGLE_SPEED * playTime;
+//    
+//    // adjust viewport and projection matrix to texture dimension
+//    glViewport(0, 0, TEXTURE_WIDTH, TEXTURE_HEIGHT);
+//    glMatrixMode(GL_PROJECTION);
+//    glLoadIdentity();
+//    gluPerspective(60.0f, (float)(TEXTURE_WIDTH)/TEXTURE_HEIGHT, 1.0f, 100.0f);
+//    glMatrixMode(GL_MODELVIEW);
+//    
+//    // camera transform
+//    glLoadIdentity();
+//    glTranslatef(0, 0, -CAMERA_DISTANCE);
+//    
+//    // with FBO
+//    // render directly to a texture
+//    if(fboUsed)
+//    {
+//        // set the rendering destination to FBO
+//        glBindFramebuffer(GL_FRAMEBUFFER, fboId);
+//        
+//        // clear buffer
+//        glClearColor(1, 1, 1, 1);
+//        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+//        
+//        // enable stencil test
+//        glEnable(GL_STENCIL_TEST);
+//        
+//        // draw a rotating teapot
+//        glPushMatrix();
+//        glRotatef(angle*0.5f, 1, 0, 0);
+//        glRotatef(angle, 0, 1, 0);
+//        glRotatef(angle*0.7f, 0, 0, 1);
+//        glTranslatef(0, -1.575f, 0);
+//        
+//        // PASS1: draw teapot on both color and stencil buffer
+//        // The reference value will be written to the stencil buffer if the test is passed.
+//        glStencilFunc(GL_ALWAYS, 0x1, 0x1);
+//        glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
+//        glColor3f(0.929524f, 0.796542f, 0.178823f);
+//        drawTeapot();
+//        
+//        // PASS 2: draw the wireframe teapot only where the stencil value is NOT set to 1.
+//        glStencilFunc(GL_NOTEQUAL, 0x1, 0x1);
+//        glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
+//        glDisable(GL_LIGHTING);
+//        glColor3f(0,1,0); // outline color
+//        glLineWidth(5.0f);
+//        glPolygonMode(GL_FRONT_AND_BACK, GL_LINE); // wireframe
+//        drawTeapot();
+//        glPolygonMode(GL_FRONT_AND_BACK, GL_FILL); // return to fill mode
+//        glEnable(GL_LIGHTING);
+//        
+//        glPopMatrix();
+//        glDisable(GL_STENCIL_TEST);
+//        
+//        // back to normal window-system-provided framebuffer
+//        glBindFramebuffer(GL_FRAMEBUFFER, 0); // unbind
+//        
+//        // trigger mipmaps generation explicitly
+//        // NOTE: If GL_GENERATE_MIPMAP is set to GL_TRUE, then glCopyTexSubImage2D()
+//        // triggers mipmap generation automatically. However, the texture attached
+//        // onto a FBO should generate mipmaps manually via glGenerateMipmapEXT().
+//        glBindTexture(GL_TEXTURE_2D, textureId);
+//        glGenerateMipmap(GL_TEXTURE_2D);
+//        glBindTexture(GL_TEXTURE_2D, 0);
+//    }
+//    
+//    // without FBO
+//    // render to the backbuffer and copy the backbuffer to a texture
+//    else
+//    {
+//        // clear buffer
+//        glClearColor(1, 1, 1, 1);
+//        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT| GL_STENCIL_BUFFER_BIT);
+//        
+//        glPushAttrib(GL_COLOR_BUFFER_BIT | GL_PIXEL_MODE_BIT); // for GL_DRAW_BUFFER and GL_READ_BUFFER
+//        glDrawBuffer(GL_BACK);
+//        glReadBuffer(GL_BACK);
+//        
+//        // enable stencil test
+//        glEnable(GL_STENCIL_TEST);
+//        
+//        // draw a rotating teapot
+//        glPushMatrix();
+//        glRotatef(angle*0.5f, 1, 0, 0);
+//        glRotatef(angle, 0, 1, 0);
+//        glRotatef(angle*0.7f, 0, 0, 1);
+//        glTranslatef(0, -1.575f, 0);
+//        
+//        // PASS1: draw teapot on both color and stencil buffer
+//        // The reference value will be written to the stencil buffer if the test is passed.
+//        glStencilFunc(GL_ALWAYS, 0x1, 0x1);
+//        glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
+//        glColor3f(0.929524f, 0.796542f, 0.178823f);
+//        drawTeapot();
+//        
+//        // PASS 2: draw the wireframe teapot only where the stencil value is NOT set to 1.
+//        glStencilFunc(GL_NOTEQUAL, 0x1, 0x1);
+//        glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
+//        glDisable(GL_LIGHTING);
+//        glColor3f(0,1,0); // outline color
+//        glLineWidth(5.0f);
+//        glPolygonMode(GL_FRONT_AND_BACK, GL_LINE); // wireframe
+//        drawTeapot();
+//        glPolygonMode(GL_FRONT_AND_BACK, GL_FILL); // return to fill mode
+//        glEnable(GL_LIGHTING);
+//        
+//        glPopMatrix();
+//        glDisable(GL_STENCIL_TEST);
+//        
+//        // copy the framebuffer pixels to a texture
+//        glBindTexture(GL_TEXTURE_2D, textureId);
+//        glCopyTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, 0, 0, TEXTURE_WIDTH, TEXTURE_HEIGHT);
+//        glBindTexture(GL_TEXTURE_2D, 0);
+//        
+//        glPopAttrib(); // GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT
+//    }
+//    
+//    
+//    // rendering as normal ////////////////////////////////////////////////////
+//    
+//    // back to normal viewport and projection matrix
+//    glViewport(0, 0, screenWidth, screenHeight);
+//    glMatrixMode(GL_PROJECTION);
+//    glLoadIdentity();
+//    gluPerspective(60.0f, (float)(screenWidth)/screenHeight, 1.0f, 100.0f);
+//    glMatrixMode(GL_MODELVIEW);
+//    glLoadIdentity();
+//    
+//    // tramsform camera
+//    glTranslatef(0, 0, -cameraDistance);
+//    glRotatef(cameraAngleX, 1, 0, 0);   // pitch
+//    glRotatef(cameraAngleY, 0, 1, 0);   // heading
+//    
+//    // clear framebuffer
+//    glClearColor(0, 0, 0, 0);
+//    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+//    
+//    glPushMatrix();
+//    
+//    // draw a cube with the dynamic texture
+//    draw();
+//    
+//    glPopMatrix();
+//    
+//    // draw info messages
+//    showInfo();
     glutSwapBuffers();
 }
 
