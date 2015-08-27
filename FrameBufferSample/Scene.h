@@ -10,6 +10,8 @@
 #define __FrameBufferSample__Scene__
 
 #include "Cache.h"
+#include "Matrix.h"
+#include "FileLoader.h"
 
 class Drawable;
 
@@ -22,10 +24,14 @@ public:
     void draw();
 protected:
     void validate();
+    const Math::Mat4& getViewProjMatrix();
 private:
     Drawable* mDrawable;
     int mWidth;
     int mHeight;
+    Math::Mat4 mViewProjMatrix;
+    FileLoader::ImageData mTextureData;
+    
 };
 
 #endif /* defined(__FrameBufferSample__Scene__) */

@@ -12,6 +12,8 @@
 #include "Cache.h"
 #include "Vector.h"
 #include "Matrix.h"
+#include "FileLoader.h"
+#include <vector>
 
 class ShaderProgram;
 class Geometry;
@@ -24,12 +26,13 @@ public:
     ~Drawable();
     
     void setTransform(const Math::Mat4& transform);
+    void setTextureData(const FileLoader::ImageData& textureData);
     
-    void draw();
+    void draw(const Math::Mat4& viewProj);
 protected:
     void validate();
 private:
-    void loadTexture(int width, int height, unsigned char* imgBuffer);
+    void loadTexture(const FileLoader::ImageData& imgData);
     ShaderProgram* mProgram;
     Geometry* mGeometry;
     Buffer* mBuffer;
@@ -37,6 +40,7 @@ private:
     unsigned int mTexId;
     Math::Vec2f mSize;
     Math::Mat4 mTransform;
+    FileLoader::ImageData mTextureData;
 };
 
 #endif /* defined(__FrameBufferSample__Drawable__) */
